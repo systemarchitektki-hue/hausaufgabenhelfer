@@ -1,74 +1,62 @@
 import os
 import base64
 import locale
-import requests
+
 import streamlit as st
 from openai import OpenAI
 
+# ---------------------------------
+# Streamlit Config (muss sehr früh kommen)
+# ---------------------------------
+st.set_page_config(page_title="Hausaufgabenhelfer", page_icon="📘", layout="centered")
+
+# ---------------------------------
+# Locale (optional)
+# ---------------------------------
 try:
     locale.setlocale(locale.LC_ALL, "de_DE.UTF-8")
 except Exception:
     pass
 
-
-# Optional: API-Key via .env laden
+# Optional: API-Key via .env laden (lokal)
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except Exception:
     pass
 
-# =========================
-# APP-GATE / ZUGANGSSYSTEM
-# =========================
+# ---------------------------------
+# Header
+# ---------------------------------
+st.title("📘 Hausaufgabenhelfer")
+st.markdown(
+    "Ein freundlicher, kindgerechter Helfer für Hausaufgaben. "
+    "Wähle unten aus, wie die Erklärung aussehen soll."
+)
 
-PROJECT_REF = os.getenv("PROJECT_REF", "jfuplwfnpimgopmfxvcy").strip()
-VALIDATE_URL = f"https://{PROJECT_REF}.supabase.co/functions/v1/validate_access_code"
-
-def validate_access_code(code: str) -> bool:
-    if not code:
-        return False
-    r = requests.post(
-        VALIDATE_URL,
-        json={"code": code.strip()},
-        timeout=15
+# ---------------------------------
+# API Key Check
+# ---------------------------------
+if not os.getenv("OPENAI_API_KEY"):
+    st.error(
+        "OPENAI_API_KEY ist nicht gesetzt.\n\n"
+        "Option A (Windows): setx OPENAI_API_KEY \"IHR_KEY\" und VS Code neu starten.\n"
+        "Option B (.env): Legen Sie eine Datei .env im Projektordner an mit:\n"
+        "OPENAI_API_KEY=IHR_KEY\n\n"
+        "In Streamlit Cloud: Settings → Secrets → OPENAI_API_KEY setzen."
     )
-    r.raise_for_status()
-    return bool(r.json().get("valid"))
-
-if "access_granted" not in st.session_state:
-    st.session_state.access_granted = False
-
-st.title("Hausaufgabenhelfer")
-
-with st.expander("🔐 Zugang", expanded=not st.session_state.access_granted):
-    code_input = st.text_input(
-        "Zugangscode",
-        placeholder="z.B. JHY6-53HU-RQCM"
-    )
-
-    if st.button("Freischalten", type="primary"):
-        try:
-            if validate_access_code(code_input):
-                st.session_state.access_granted = True
-                st.success("Zugang erfolgreich freigeschaltet.")
-                st.rerun()
-            else:
-                st.error("Zugangscode ungültig oder deaktiviert.")
-        except Exception as e:
-            st.error(f"Fehler bei der Prüfung: {e}")
-
-# HARTER STOP: ohne gültigen Code keine App
-if not st.session_state.access_granted:
     st.stop()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# ---------------------------------
+# Prompt Builder
+# ---------------------------------
 def build_system_text(klassenstufe: str, fach: str, antwort_laenge: str) -> str:
     laenge_map = {
         "Kurz": "Antworte sehr kurz, aber vollständig. Maximal 5 Schritte.",
         "Normal": "Antworte in klaren, nummerierten Schritten.",
-        "Sehr ausführlich": "Antworte sehr ausführlich, mit kleinen Zwischen-Erklärungen und Beispielen."
+        "Sehr ausführlich": "Antworte sehr ausführlich, mit kleinen Zwischen-Erklärungen und Beispielen.",
     }
     return (
         "Du bist ein freundlicher, kindgerechter Hausaufgabenhelfer. "
@@ -86,11 +74,13 @@ def build_system_image(klassenstufe: str, fach: str, antwort_laenge: str) -> str
         "Falls keine Aufgaben vorhanden sind, sage das klar."
     )
 
-
 def bytes_to_data_url(file_bytes: bytes, mime: str) -> str:
     b64 = base64.b64encode(file_bytes).decode("utf-8")
     return f"data:{mime};base64,{b64}"
 
+# ---------------------------------
+# OpenAI Calls
+# ---------------------------------
 def ask_text(question: str, klassenstufe: str, fach: str, antwort_laenge: str) -> str:
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -100,7 +90,6 @@ def ask_text(question: str, klassenstufe: str, fach: str, antwort_laenge: str) -
         ],
     )
     return resp.choices[0].message.content
-
 
 def ask_image(image_bytes: bytes, mime: str, prompt: str, klassenstufe: str, fach: str, antwort_laenge: str) -> str:
     data_url = bytes_to_data_url(image_bytes, mime)
@@ -119,45 +108,29 @@ def ask_image(image_bytes: bytes, mime: str, prompt: str, klassenstufe: str, fac
     )
     return resp.choices[0].message.content
 
-
-st.set_page_config(page_title="Hausaufgabenhelfer", page_icon="📘", layout="centered")
-st.title("📘 Hausaufgabenhelfer")
-st.markdown(
-    "Ein freundlicher, kindgerechter Helfer für Hausaufgaben. "
-    "Wähle unten aus, wie die Erklärung aussehen soll."
-)
-
+# ---------------------------------
+# UI Controls
+# ---------------------------------
 colA, colB = st.columns(2)
 with colA:
     klassenstufe = st.selectbox(
         "Klassenstufe",
         ["1–2", "3–4", "5–6", "7–8", "9–10", "11–13"],
-        index=1
+        index=1,
     )
 with colB:
     fach = st.selectbox(
         "Fach",
         ["Mathe", "Deutsch", "Englisch", "Sachkunde", "Physik", "Chemie", "Biologie", "Geschichte", "Sonstiges"],
-        index=0
+        index=0,
     )
 
 antwort_laenge = st.radio(
     "Antwortlänge",
     ["Kurz", "Normal", "Sehr ausführlich"],
     horizontal=True,
-    index=1
+    index=1,
 )
-
-
-# API Key Check
-if not os.getenv("OPENAI_API_KEY"):
-    st.error(
-        "OPENAI_API_KEY ist nicht gesetzt.\n\n"
-        "Option A (Windows): setx OPENAI_API_KEY \"IHR_KEY\" und VS Code neu starten.\n"
-        "Option B (.env): Legen Sie eine Datei .env im Projektordner an mit:\n"
-        "OPENAI_API_KEY=IHR_KEY"
-    )
-    st.stop()
 
 # Session-State für Verlauf
 if "history" not in st.session_state:
@@ -165,12 +138,15 @@ if "history" not in st.session_state:
 
 tab1, tab2 = st.tabs(["Textfrage", "Bildanalyse"])
 
+# ---------------------------------
+# Tab 1: Textfrage
+# ---------------------------------
 with tab1:
     st.subheader("Textfrage stellen")
     question = st.text_area(
         "Ihre Frage:",
         placeholder="z.B. Erkläre mir 3/4 + 1/2 Schritt für Schritt.",
-        height=120
+        height=120,
     )
 
     col1, col2 = st.columns([1, 1])
@@ -195,19 +171,22 @@ with tab1:
         st.divider()
         st.subheader("Verlauf")
         for i, (kind, q, a) in enumerate(st.session_state.history):
-            with st.expander(f"{kind} #{len(st.session_state.history)-i}"):
+            with st.expander(f"{kind} #{len(st.session_state.history) - i}"):
                 st.markdown("**Frage:**")
                 st.write(q)
                 st.markdown("**Antwort:**")
                 st.write(a)
 
+# ---------------------------------
+# Tab 2: Bildanalyse
+# ---------------------------------
 with tab2:
     st.subheader("Bild hochladen und Aufgaben lösen")
     uploaded = st.file_uploader("Bild auswählen (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
     prompt = st.text_input(
         "Hinweis an die KI (optional):",
-        value="Erkenne alle Aufgaben im Bild und löse sie Schritt für Schritt."
+        value="Erkenne alle Aufgaben im Bild und löse sie Schritt für Schritt.",
     )
 
     run_img = st.button("Bild analysieren", type="primary", use_container_width=True)
@@ -222,15 +201,14 @@ with tab2:
             st.image(image_bytes, caption="Hochgeladenes Bild", use_container_width=True)
 
             with st.spinner("Ich analysiere das Bild und erkläre die Aufgaben …"):
-
                 answer = ask_image(
-    image_bytes,
-    mime,
-    prompt.strip() or "Löse die Aufgaben im Bild.",
-    klassenstufe,
-    fach,
-    antwort_laenge
-)
+                    image_bytes=image_bytes,
+                    mime=mime,
+                    prompt=prompt.strip() or "Löse die Aufgaben im Bild.",
+                    klassenstufe=klassenstufe,
+                    fach=fach,
+                    antwort_laenge=antwort_laenge,
+                )
 
             st.markdown("### Ergebnis")
             st.write(answer)
