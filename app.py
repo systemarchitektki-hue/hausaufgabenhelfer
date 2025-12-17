@@ -8,7 +8,7 @@ from openai import OpenAI
 # ---------------------------------
 # Streamlit Config (muss sehr früh kommen)
 # ---------------------------------
-st.set_page_config(page_title="Hausaufgabenhelfer", page_icon="📘", layout="centered")
+st.set_page_config(page_title="Hausaufgabenhelfer", page_icon="🎓", layout="centered")
 
 # ---------------------------------
 # Locale (optional)
@@ -26,12 +26,59 @@ except Exception:
     pass
 
 # ---------------------------------
+# Custom CSS für Dark Mode mit Neon Accents
+# ---------------------------------
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #0a0e27;
+        color: #e0e0e0;
+    }
+    .stButton>button {
+        background-color: #1a1f3a;
+        color: #00ff88;
+        border: 1px solid #00ff88;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    .stButton>button:hover {
+        background-color: #00ff88;
+        color: #0a0e27;
+        border: 1px solid #00ff88;
+    }
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+        background-color: #1a1f3a;
+        color: #e0e0e0;
+        border: 1px solid #2a3f5f;
+    }
+    .stSelectbox>div>div>div, .stRadio>div {
+        background-color: #1a1f3a;
+        color: #e0e0e0;
+    }
+    h1, h2, h3 {
+        color: #00ff88;
+        font-weight: 600;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #1a1f3a;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #e0e0e0;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #00ff88;
+        border-bottom-color: #00ff88;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------------
 # Header
 # ---------------------------------
-st.title("📘 Hausaufgabenhelfer")
+st.title("Hausaufgabenhelfer")
 st.markdown(
-    "Ein freundlicher, kindgerechter Helfer für Hausaufgaben. "
-    "Wähle unten aus, wie die Erklärung aussehen soll."
+    "Professionelle Unterstützung für Ihre schulischen Aufgaben. "
+    "Wählen Sie die gewünschten Parameter für eine präzise Erklärung."
 )
 
 # ---------------------------------
@@ -59,9 +106,9 @@ def build_system_text(klassenstufe: str, fach: str, antwort_laenge: str) -> str:
         "Sehr ausführlich": "Antworte sehr ausführlich, mit kleinen Zwischen-Erklärungen und Beispielen.",
     }
     return (
-        "Du bist ein freundlicher, kindgerechter Hausaufgabenhelfer. "
+        "Du bist ein professioneller Hausaufgabenhelfer. "
         f"Zielgruppe: Klasse {klassenstufe}. Fach: {fach}. "
-        "Erkläre immer Schritt für Schritt in einfachem Deutsch. "
+        "Erkläre immer Schritt für Schritt in klarem Deutsch. "
         "Schreibe Brüche wie 3/4 oder 5/4, aber benutze KEIN LaTeX, "
         "keine Backslashes und keine Formeln mit \\frac oder ähnlichem. "
         "Formatierung: nur normaler Text mit nummerierten Schritten. "
@@ -161,21 +208,11 @@ with tab1:
 
     if ask_btn:
         if not question.strip():
-            st.warning("Bitte eine Frage eingeben.")
+            st.warning("Bitte geben Sie eine Frage ein.")
         else:
-            with st.spinner("Ich denke nach und erkläre dir die Aufgabe …"):
+            with st.spinner("Ich analysiere Ihre Frage und erstelle eine detaillierte Erklärung …"):
                 answer = ask_text(question.strip(), klassenstufe, fach, antwort_laenge)
             st.session_state.history.insert(0, ("Text", question.strip(), answer))
-
-    if st.session_state.history:
-        st.divider()
-        st.subheader("Verlauf")
-        for i, (kind, q, a) in enumerate(st.session_state.history):
-            with st.expander(f"{kind} #{len(st.session_state.history) - i}"):
-                st.markdown("**Frage:**")
-                st.write(q)
-                st.markdown("**Antwort:**")
-                st.write(a)
 
 # ---------------------------------
 # Tab 2: Bildanalyse
@@ -185,7 +222,7 @@ with tab2:
     uploaded = st.file_uploader("Bild auswählen (JPG/PNG)", type=["jpg", "jpeg", "png"])
 
     prompt = st.text_input(
-        "Hinweis an die KI (optional):",
+        "Hinweis an die KI (optional)",
         value="Erkenne alle Aufgaben im Bild und löse sie Schritt für Schritt.",
     )
 
@@ -193,14 +230,14 @@ with tab2:
 
     if run_img:
         if uploaded is None:
-            st.warning("Bitte zuerst ein Bild hochladen.")
+            st.warning("Bitte laden Sie zuerst ein Bild hoch.")
         else:
             mime = uploaded.type or "image/jpeg"
             image_bytes = uploaded.read()
 
             st.image(image_bytes, caption="Hochgeladenes Bild", use_container_width=True)
 
-            with st.spinner("Ich analysiere das Bild und erkläre die Aufgaben …"):
+            with st.spinner("Bildanalyse läuft..."):
                 answer = ask_image(
                     image_bytes=image_bytes,
                     mime=mime,
