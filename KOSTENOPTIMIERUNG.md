@@ -1,4 +1,36 @@
-# 💰 KOSTENOPTIMIERUNG - Verwendete KI-Modelle
+def ask_image(image_bytes: bytes, mime: str, prompt: str, klassenstufe: str, fach: str, antwort_laenge: str) -> str:
+    data_url = bytes_to_data_url(image_bytes, mime)
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",  # ← HIER ÄNDERN von "gpt-3.5-turbo" zu "gpt-4o-mini"
+        messages=[
+            {"role": "system", "content": build_system_image(klassenstufe, fach, antwort_laenge)},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                ],
+            },
+        ],
+    )
+    content = resp.choices[0].message.content
+    return content if content else "Keine Antwort erhalten."def ask_image(image_bytes: bytes, mime: str, prompt: str, klassenstufe: str, fach: str, antwort_laenge: str) -> str:
+    data_url = bytes_to_data_url(image_bytes, mime)
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",  # ← HIER ÄNDERN von "gpt-3.5-turbo" zu "gpt-4o-mini"
+        messages=[
+            {"role": "system", "content": build_system_image(klassenstufe, fach, antwort_laenge)},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                ],
+            },
+        ],
+    )
+    content = resp.choices[0].message.content
+    return content if content else "Keine Antwort erhalten."# 💰 KOSTENOPTIMIERUNG - Verwendete KI-Modelle
 
 ## 🎯 Gewählte Modelle für minimale Kosten
 
