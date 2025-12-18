@@ -216,7 +216,7 @@ def ask_text(question: str, klassenstufe: str, fach: str, antwort_laenge: str) -
 def ask_image(image_bytes: bytes, mime: str, prompt: str, klassenstufe: str, fach: str, antwort_laenge: str) -> str:
     data_url = bytes_to_data_url(image_bytes, mime)
     resp = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": build_system_image(klassenstufe, fach, antwort_laenge)},
             {

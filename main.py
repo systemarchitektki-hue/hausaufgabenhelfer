@@ -75,7 +75,7 @@ def bild_verarbeiten(dateipfad: str) -> str:
     data_url = bild_als_data_url(dateipfad)
 
     response = client.chat.completions.create(
-        model="gpt-4-turbo",
+        model="gpt-4o",
         messages=[
             {
                 "role": "system",
