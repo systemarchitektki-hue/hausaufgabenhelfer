@@ -346,12 +346,12 @@ with tab3:
 st.markdown(f"""
 <div class="footer">
     <p><strong>{PRODUCT_NAME}</strong> - Version {VERSION}</p>
-    <p>Entwickelt mit ❤️ für besseres Lernen | Powered by OpenAI GPT-4</p>
+    <p>by {BRAND_NAME}</p>
     <p style="font-size: 0.8rem; margin-top: 1rem;">
-        © 2024 Alle Rechte vorbehalten | 
-        <a href="#" style="color: #00ff88;">Datenschutz</a> | 
-        <a href="#" style="color: #00ff88;">Nutzungsbedingungen</a> | 
-        <a href="#" style="color: #00ff88;">Support</a>
+        © 2024 {BRAND_NAME} |
+        <a href="#" style="color: #D4A574;">Datenschutz</a> |
+        <a href="#" style="color: #D4A574;">Nutzungsbedingungen</a> |
+        <a href="#" style="color: #D4A574;">Support</a>
     </p>
 </div>
 """, unsafe_allow_html=True)
