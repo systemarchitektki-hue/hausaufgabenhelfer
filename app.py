@@ -6,8 +6,8 @@ from openai import OpenAI
 from datetime import datetime
 
 st.set_page_config(
-    page_title="Hausaufgabenhelfer Pro - KI-gestützte Lernhilfe",
-    page_icon="🎓",
+    page_title="Hausaufgabenhelfer Pro - System Architekt",
+    page_icon="📐",
     layout="centered",
     initial_sidebar_state="expanded"
 )
@@ -25,143 +25,134 @@ except Exception:
 
 VERSION = "1.0.0"
 PRODUCT_NAME = "Hausaufgabenhelfer Pro"
+BRAND_NAME = "System Architekt"
 
 st.markdown("""
 <style>
     .stApp {
-        background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-        color: #e0e0e0;
+        background: #0a0a0a;
+        color: #ffffff;
     }
     .stButton>button {
-        background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-        color: #0a0e27;
+        background: linear-gradient(135deg, #D4A574 0%, #C4956A 100%);
+        color: #0a0a0a;
         border: none;
         border-radius: 8px;
         font-weight: 600;
         padding: 0.5rem 2rem;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        box-shadow: 0 4px 15px rgba(212, 165, 116, 0.3);
     }
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 255, 136, 0.5);
+        box-shadow: 0 6px 20px rgba(212, 165, 116, 0.5);
     }
     .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-        background-color: #1a1f3a;
-        color: #e0e0e0;
-        border: 2px solid #2a3f5f;
+        background-color: #1a1a1a;
+        color: #ffffff;
+        border: 1px solid #333333;
         border-radius: 8px;
         padding: 0.75rem;
     }
     .stTextInput>div>div>input:focus, .stTextArea>div>div>textarea:focus {
-        border-color: #00ff88;
-        box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        border-color: #D4A574;
+        box-shadow: 0 0 10px rgba(212, 165, 116, 0.3);
     }
     .stSelectbox>div>div>div, .stRadio>div {
-        background-color: #1a1f3a;
-        color: #e0e0e0;
+        background-color: #1a1a1a;
+        color: #ffffff;
         border-radius: 8px;
     }
     h1 {
-        color: #00ff88;
+        color: #D4A574;
         font-weight: 700;
         text-align: center;
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         margin-bottom: 0.5rem;
-        text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
     }
     h2, h3 {
-        color: #00ff88;
+        color: #D4A574;
         font-weight: 600;
     }
     .stTabs [data-baseweb="tab-list"] {
-        background-color: #1a1f3a;
+        background-color: #1a1a1a;
         border-radius: 8px;
         padding: 0.5rem;
     }
     .stTabs [data-baseweb="tab"] {
-        color: #e0e0e0;
+        color: #ffffff;
         border-radius: 6px;
         padding: 0.75rem 1.5rem;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #00ff88;
-        color: #0a0e27;
+        background-color: #D4A574;
+        color: #0a0a0a;
         font-weight: 600;
     }
     .product-header {
         text-align: center;
         padding: 2rem 0;
-        background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 204, 106, 0.1) 100%);
+        background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(196, 149, 106, 0.05) 100%);
         border-radius: 12px;
         margin-bottom: 2rem;
-        border: 1px solid rgba(0, 255, 136, 0.3);
+        border: 1px solid rgba(212, 165, 116, 0.3);
     }
     .feature-box {
-        background-color: #1a1f3a;
+        background-color: #1a1a1a;
         padding: 1.5rem;
         border-radius: 10px;
-        border: 1px solid #2a3f5f;
+        border: 1px solid #333333;
         margin: 1rem 0;
     }
     .footer {
         text-align: center;
         padding: 2rem 0;
-        color: #888;
+        color: #666666;
         font-size: 0.9rem;
-        border-top: 1px solid #2a3f5f;
+        border-top: 1px solid #333333;
         margin-top: 3rem;
+    }
+    .stSidebar {
+        background-color: #0f0f0f;
+    }
+    .stSidebar [data-testid="stSidebarContent"] {
+        background-color: #0f0f0f;
     }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown(f"""
 <div class="product-header">
-    <h1>🎓 {PRODUCT_NAME}</h1>
-    <p style="font-size: 1.2rem; color: #b0b0b0; margin-top: 0.5rem;">
-        KI-gestützte Lernhilfe für alle Klassenstufen
-    </p>
-    <p style="font-size: 0.9rem; color: #888; margin-top: 0.5rem;">
-        Version {VERSION} | Powered by OpenAI GPT-4
+    <h1>📐 {PRODUCT_NAME}</h1>
+    <p style="font-size: 1rem; color: #888888; margin-top: 0.5rem;">
+        by {BRAND_NAME}
     </p>
 </div>
 """, unsafe_allow_html=True)
 
 with st.sidebar:
     st.markdown("### ⚙️ Einstellungen")
-    
+
     klassenstufe = st.selectbox(
         "📚 Klassenstufe",
         ["1–2", "3–4", "5–6", "7–8", "9–10", "11–13"],
         index=2,
     )
-    
+
     fach = st.selectbox(
         "📖 Fach",
         ["Mathematik", "Deutsch", "Englisch", "Sachkunde", "Physik", "Chemie", "Biologie", "Geschichte", "Geographie", "Informatik", "Sonstiges"],
         index=0,
     )
-    
+
     antwort_laenge = st.radio(
         "📏 Antwortlänge",
         ["Kurz", "Normal", "Sehr ausführlich"],
         index=1,
     )
-    
+
     st.markdown("---")
-    st.markdown("### ℹ️ Über diese App")
-    st.markdown(f"""
-    **{PRODUCT_NAME}** nutzt modernste KI-Technologie, um Schülern bei ihren Hausaufgaben zu helfen.
-    
-    **Features:**
-    - ✅ Schritt-für-Schritt Erklärungen
-    - ✅ Bildanalyse von Aufgaben
-    - ✅ Alle Klassenstufen & Fächer
-    - ✅ Anpassbare Detailtiefe
-    """)
-    
-    st.markdown("---")
-    st.markdown(f"© 2024 {PRODUCT_NAME}")
+    st.markdown(f"<p style='color: #666666; font-size: 0.8rem;'>© 2024 {BRAND_NAME}</p>", unsafe_allow_html=True)
 
 if not os.getenv("OPENAI_API_KEY"):
     st.error(
