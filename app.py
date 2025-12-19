@@ -459,7 +459,10 @@ st.markdown(f"""
 <div class="footer">
     <p><strong>{PRODUCT_NAME}</strong> - Version {VERSION}</p>
     <p>by {BRAND_NAME}</p>
-    <p style="font-size: 0.8rem; margin-top: 1rem;">
+    <p style="font-size: 0.75rem; margin-top: 1rem; color: #888;">
+        Digistore24 ist Reseller und autorisierter Händler für die auf dieser Webseite angebotenen Produkte.
+    </p>
+    <p style="font-size: 0.8rem; margin-top: 0.5rem;">
         © 2024 {BRAND_NAME} |
         <a href="#" style="color: #D4A574;">Datenschutz</a> |
         <a href="#" style="color: #D4A574;">Nutzungsbedingungen</a> |
