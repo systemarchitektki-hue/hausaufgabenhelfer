@@ -8,31 +8,48 @@ import string
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, request, jsonify
-from supabase import create_client
 from datetime import datetime, timedelta
+from typing import Optional
+
+try:
+    from flask import Flask, request, jsonify  # type: ignore
+    FLASK_AVAILABLE = True
+except ImportError:
+    FLASK_AVAILABLE = False
+
+try:
+    from supabase import create_client  # type: ignore
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
+
+if not FLASK_AVAILABLE:
+    raise ImportError("Flask nicht installiert. Führe aus: pip install flask")
 
 app = Flask(__name__)
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASS = os.getenv("SMTP_PASS")
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "dein-geheimer-key")
+SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER: str = os.getenv("SMTP_USER", "")
+SMTP_PASS: str = os.getenv("SMTP_PASS", "")
+WEBHOOK_SECRET: str = os.getenv("WEBHOOK_SECRET", "dein-geheimer-key")
 
-def generate_code():
+def generate_code() -> str:
     """Generiert einen zufälligen Zugangscode"""
     chars = string.ascii_uppercase + string.digits
     return f"{''.join(secrets.choice(chars) for _ in range(4))}-{''.join(secrets.choice(chars) for _ in range(4))}-{''.join(secrets.choice(chars) for _ in range(4))}"
 
-def create_access_code(email: str, name: str, product: str = "standard"):
+def create_access_code(email: str, name: str, product: str = "standard") -> str:
     """Erstellt Zugangscode in Supabase"""
+    if not SUPABASE_AVAILABLE:
+        raise ImportError("Supabase nicht installiert")
+    
     supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
     code = generate_code()
     
-    expires = None
+    expires: Optional[str] = None
     if product == "monthly":
         expires = (datetime.now() + timedelta(days=30)).isoformat()
     elif product == "yearly":
@@ -49,8 +66,11 @@ def create_access_code(email: str, name: str, product: str = "standard"):
     
     return code
 
-def send_email(to_email: str, name: str, code: str):
+def send_email(to_email: str, name: str, code: str) -> None:
     """Sendet Zugangscode per E-Mail"""
+    if not SMTP_USER or not SMTP_PASS:
+        raise ValueError("SMTP_USER und SMTP_PASS müssen konfiguriert sein")
+    
     msg = MIMEMultipart()
     msg["From"] = SMTP_USER
     msg["To"] = to_email
@@ -90,7 +110,7 @@ def digistore_webhook():
     
     event = data.get("event")
     if event == "payment":
-        email = data.get("email")
+        email = data.get("email", "")
         name = data.get("first_name", "Kunde")
         product = data.get("product_id", "standard")
         
@@ -106,7 +126,7 @@ def gumroad_webhook():
     """Webhook für Gumroad"""
     data = request.json or request.form
     
-    email = data.get("email")
+    email = data.get("email", "")
     name = data.get("full_name", "Kunde")
     product = data.get("product_id", "standard")
     
@@ -120,4 +140,4 @@ def health():
     return jsonify({"status": "ok"})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))

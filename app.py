@@ -6,10 +6,12 @@ from openai import OpenAI
 from datetime import datetime
 
 try:
-    from supabase import create_client, Client
+    from supabase import create_client, Client  # type: ignore
     SUPABASE_AVAILABLE = True
 except ImportError:
     SUPABASE_AVAILABLE = False
+    create_client = None  # type: ignore
+    Client = None  # type: ignore
 
 st.set_page_config(
     page_title="Hausaufgabenhelfer Pro - System Architekt",
