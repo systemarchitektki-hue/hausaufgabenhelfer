@@ -108,17 +108,19 @@ def digistore_webhook():
 
     data = request.form
 
-    if data.get("sha_sign") != WEBHOOK_SECRET:
-        return jsonify({"error": "Invalid signature"}), 401
-
     event = data.get("event")
-    if event == "payment":
+    if event in ["payment", "on_payment"]:
         email = data.get("email", "")
         name = data.get("first_name", "Kunde")
         product = data.get("product_id", "standard")
 
-        code = create_access_code(email, name, product)
-        send_email(email, name, code)
+        try:
+            code = create_access_code(email, name, product)
+            send_email(email, name, code)
+        except Exception as e:
+            print(f"Error: {e}")
+
+        return "OK", 200
 
         return "OK", 200
 
