@@ -5,6 +5,12 @@ import streamlit as st
 from openai import OpenAI
 from datetime import datetime
 
+try:
+    from supabase import create_client, Client
+    SUPABASE_AVAILABLE = True
+except ImportError:
+    SUPABASE_AVAILABLE = False
+
 st.set_page_config(
     page_title="Hausaufgabenhelfer Pro - System Architekt",
     page_icon="📐",
@@ -26,6 +32,10 @@ except Exception:
 VERSION = "1.0.0"
 PRODUCT_NAME = "Hausaufgabenhelfer Pro"
 BRAND_NAME = "System Architekt"
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+LICENSE_REQUIRED = os.getenv("LICENSE_REQUIRED", "true").lower() == "true"
 
 st.markdown("""
 <style>
@@ -118,8 +128,101 @@ st.markdown("""
     .stSidebar [data-testid="stSidebarContent"] {
         background-color: #0f0f0f;
     }
+    .login-box {
+        background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(196, 149, 106, 0.05) 100%);
+        border: 1px solid rgba(212, 165, 116, 0.3);
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 400px;
+        margin: 2rem auto;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+def check_license(code: str) -> dict:
+    """Prüft Lizenzcode gegen Supabase"""
+    if not SUPABASE_AVAILABLE:
+        return {"valid": False, "error": "Supabase nicht installiert"}
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return {"valid": False, "error": "Lizenzprüfung nicht konfiguriert"}
+
+    try:
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+        response = supabase.table("access_codes").select("*").eq("code", code).execute()
+
+        if not response.data:
+            return {"valid": False, "error": "Ungültiger Zugangscode"}
+
+        license_data = response.data[0]
+
+        if not license_data.get("is_active", True):
+            return {"valid": False, "error": "Dieser Code wurde deaktiviert"}
+
+        if license_data.get("expires_at"):
+            expires = datetime.fromisoformat(license_data["expires_at"].replace("Z", "+00:00"))
+            if expires < datetime.now(expires.tzinfo):
+                return {"valid": False, "error": "Dieser Code ist abgelaufen"}
+
+        if not license_data.get("used_at"):
+            supabase.table("access_codes").update({
+                "used_at": datetime.now().isoformat(),
+                "last_used": datetime.now().isoformat()
+            }).eq("code", code).execute()
+        else:
+            supabase.table("access_codes").update({
+                "last_used": datetime.now().isoformat()
+            }).eq("code", code).execute()
+
+        return {"valid": True, "data": license_data}
+
+    except Exception as e:
+        return {"valid": False, "error": f"Verbindungsfehler: {str(e)}"}
+
+if "licensed" not in st.session_state:
+    st.session_state.licensed = False
+if "license_code" not in st.session_state:
+    st.session_state.license_code = None
+
+if LICENSE_REQUIRED and not st.session_state.licensed:
+    st.markdown(f"""
+    <div class="product-header">
+        <h1>📐 {PRODUCT_NAME}</h1>
+        <p style="font-size: 1rem; color: #888888; margin-top: 0.5rem;">
+            by {BRAND_NAME}
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 🔐 Zugang erforderlich")
+    st.markdown("Bitte geben Sie Ihren Zugangscode ein, um die App zu nutzen.")
+
+    with st.form("license_form"):
+        code = st.text_input("Zugangscode", placeholder="XXX-XXX-XXX", type="password")
+        submit = st.form_submit_button("Zugang freischalten", type="primary", use_container_width=True)
+
+        if submit:
+            if not code.strip():
+                st.error("Bitte geben Sie einen Zugangscode ein.")
+            else:
+                result = check_license(code.strip())
+                if result["valid"]:
+                    st.session_state.licensed = True
+                    st.session_state.license_code = code.strip()
+                    st.success("✅ Zugang freigeschaltet!")
+                    st.rerun()
+                else:
+                    st.error(f"❌ {result['error']}")
+
+    st.markdown("---")
+    st.markdown("""
+    <div style="text-align: center; color: #666666; font-size: 0.9rem;">
+        <p>Noch keinen Zugangscode?</p>
+        <p>Kontaktieren Sie uns für eine Lizenz.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.stop()
 
 st.markdown(f"""
 <div class="product-header">
@@ -152,6 +255,13 @@ with st.sidebar:
     )
 
     st.markdown("---")
+
+    if LICENSE_REQUIRED and st.session_state.licensed:
+        if st.button("🚪 Abmelden", use_container_width=True):
+            st.session_state.licensed = False
+            st.session_state.license_code = None
+            st.rerun()
+
     st.markdown(f"<p style='color: #666666; font-size: 0.8rem;'>© 2024 {BRAND_NAME}</p>", unsafe_allow_html=True)
 
 if not os.getenv("OPENAI_API_KEY"):
