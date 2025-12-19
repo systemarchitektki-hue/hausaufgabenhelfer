@@ -100,26 +100,29 @@ System Architekt
         server.login(SMTP_USER, SMTP_PASS)
         server.send_message(msg)
 
-@app.route("/webhook/digistore", methods=["POST"])
+@app.route("/webhook/digistore", methods=["GET", "POST"])
 def digistore_webhook():
     """Webhook für Digistore24"""
+    if request.method == "GET":
+        return "OK", 200
+
     data = request.form
-    
+
     if data.get("sha_sign") != WEBHOOK_SECRET:
         return jsonify({"error": "Invalid signature"}), 401
-    
+
     event = data.get("event")
     if event == "payment":
         email = data.get("email", "")
         name = data.get("first_name", "Kunde")
         product = data.get("product_id", "standard")
-        
+
         code = create_access_code(email, name, product)
         send_email(email, name, code)
-        
-        return jsonify({"success": True, "code": code})
-    
-    return jsonify({"success": True})
+
+        return "OK", 200
+
+    return "OK", 200
 
 @app.route("/webhook/gumroad", methods=["POST"])
 def gumroad_webhook():
