@@ -1,7 +1,4 @@
-.env
-.venv
-__pycache__/
-.mypy_cache/
-.vscode/
-tools/supabase/
-lovvv.json
+
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md
